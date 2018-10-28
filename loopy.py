@@ -9,7 +9,7 @@ b = "b"
 filename1 = sys.argv[1]
 filename2 = sys.argv[2]
 df = int(sys.argv[3])
-ineq = sys.argv[4]
+ineq = sys.argv[4] # values are lt and leq
 outputfilename = sys.argv[5]
 
 #aut transitions are in the form aut[src][alpha][wt] = destinationList
@@ -52,8 +52,8 @@ def parse(filename):
     f.close()
     return aut
 
-aut1 = parse("input1.txt")
-aut2 = parse("input2.txt")
+aut1 = parse(filename1)
+aut2 = parse(filename2)
 
 
 #global values
@@ -61,7 +61,7 @@ aut2 = parse("input2.txt")
 maxWt = 4
 #df = 3
 threshold = int( floor(float(maxWt)/(df-1))) + 1
-#print maxWt, df, threshold
+print maxWt, df, threshold
 #state tuple size
 tuplesize = 4
 accept = "Accept"
@@ -290,6 +290,16 @@ def main():
     weight1Stack.append(firstweight)
     weight2Stack.append(firstweight)
 
+    print "Aux dictionaries"
+    print reach
+    print stacked
+    print transopt
+    print "work stacks"
+    print stateStack
+    print wordStack
+    print weight1Stack
+    print weight2Stack
+     
     flagOver = False
     numloop = 0
     while(stateStack!=[]):
@@ -317,7 +327,7 @@ def main():
         #print weight2Stack
     
         newstate = destination(state, word, guess1, guess2)
-        #print state, word, guess1, guess2, newstate
+        print state, word, guess1, guess2, newstate
         #print transopt
         
         #Returns tuplesize if [] is not in the newstate, else returns index of first occurence of [] in tuple
@@ -327,14 +337,21 @@ def main():
             emptyat = tuplesize
         reachable = False
 
-        #print emptyat
-        
+        print emptyat
+        #print newstate
         if emptyat == tuplesize: #valid state
             newstateStr = stringify(newstate)
-            if loop(newstateStr): #if state is already on the stack, counter-example found
-                #print "Counter example found"
-                flagOver = True
-                
+            if loop(newstateStr): #if state is already on the stack,
+                if (ineq == "lt"): # counter example found
+                    #print "Counter example found"
+                    flagOver = True
+                if (ineq == "leq"):
+                    #Check if state in first comparator is accepting. if yes, we are done, else we need to extend the same word and weight sequences more (only change run in P)
+                    if newstate[0] == accept: #found counterexample
+                        flagOver = True
+                    else:
+                        emptyat = 1 #Chagne run in P
+                        
             elif loop(newstateStr) == False and access(newstateStr):
                 #not on stack, but has been visited previously
                 #this state is not useful -> change the transition
@@ -358,7 +375,7 @@ def main():
             #False --- No need to do to optimize. Since, if a state is reached that has been visited previously, the reachabiity clause does not continue computation
             #If weigt2 cannot be incresed, w_max is not optimal in Q. Therefore, w_0 is not maximal either. Might as well look at new word in P. So, we look at next word in P.
 
-            #print "Inside 3"
+            print "Inside 3"
             guess2 = guess2 + 1
             if guess2 > maxWt:
                 emptyat = -1
@@ -373,7 +390,7 @@ def main():
             #False -- No need to do to optimize. Since, if a state is reached that has been visited previously, the reachabiity clause does not continue computation
             #If weigt2 cannot be incresed: There is no sequence of word with weight2, if weight2 cannot change, we need to change word in Q. So, change word in P. 
 
-            #print "Inside 2"
+            print "Inside 2"
             guess2 = guess2 + 1
             #print guess2, maxWt
             if guess2 > maxWt:
@@ -390,7 +407,7 @@ def main():
         if emptyat == 1:
             #change run in P
             #if run cannot change, change weight in P
-            #print "Inside 1"
+            print "Inside 1"
             stateTemp = state
             #print runPstateset, runPindex
             while(reach[stringify(stateTemp)] == True):
@@ -414,7 +431,7 @@ def main():
             #So, find the next weight1
             #If next weight1 doesnt exist, find next word in P. 
 
-            #print "Inside 0"
+            print "Inside 0"
             #print state, newstate
             guess1 = guess1 + 1
             #print guess1, maxWt
@@ -438,7 +455,7 @@ def main():
             
         if emptyat == -1:
 
-            #print "Inside -1"
+            print "Inside -1"
             word = nextword(word)
             if word =="NA":
                 wordStack.pop()
@@ -463,6 +480,17 @@ def main():
                 
         if flagOver == True:
             break
+
+        print "Aux dictionaries"
+        print reach
+        print stacked
+        print transopt
+        print "work stacks"
+        print stateStack
+        print wordStack
+        print weight1Stack
+        print weight2Stack
+        
     endTime = time.time()
     if flagOver == True:
         sol =  "Counterexample found" + " " + str(numloop) + " "+ str(len(reach)) + " " + str(endTime-startTime)
